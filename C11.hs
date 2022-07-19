@@ -2,12 +2,13 @@ import Control.Applicative
 import Data.Monoid
 
 -- We can use the following type to simulate our own list
-data List a = Empty | Value a (List a) deriving (Show)
+data List a = Empty | Value a (List a) deriving (Show, Eq)
 
 -- Make the list a Functor
 instance Functor List where
         fmap _ Empty = Empty
         fmap f (Value v rest) = Value (f v) (fmap f rest)
+
 
 -- Write a function which appends one list on to another
 combineLists:: List a -> List a -> List a
@@ -16,16 +17,20 @@ combineLists other Empty = other
 combineLists (Value v rest) other = Value v (combineLists rest other)
 
 
+instance Semigroup (List a) where
+  (<>) = combineLists
+
+
+-- Make our list a Monoid
+instance Monoid (List a) where
+        mempty = Empty
+
 -- Make our list an Applicative
 instance Applicative List where
         pure x = Value x Empty
         Empty <*> _ = Empty
         (Value f rest) <*> list = combineLists (fmap f list) (rest <*> list)
 
--- Make our list a Monoid
-instance Monoid List a where
-        mempty = Empty
-        mappend = combineLists
 
 
 -- Make sure that the List obeys the laws for Applicative and Monoid
@@ -55,7 +60,6 @@ plusTwo = (+2)
 addedTwoList = plusTwo <$> twoValueList
 
 -- Use <$> and <*> on the lists with a binary function
-
 anotherList = Value 100 $ Value 200 $ Value 300 Empty
 
 addAll = (+) <$> twoValueList <*> anotherList
